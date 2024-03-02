@@ -1,0 +1,69 @@
+# !!! Requires grafana-creds
+# kubectl create -n digital-hospitals secret generic grafana-creds \
+#   --from-literal=INFLUXDB_URL="" \
+#   --from-literal=INFLUXDB_TOKEN="" \
+#   --from-literal=INFLUXDB_ORG=""
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digital-hospitals
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: graf-data-dir-pvc
+  namespace: digital-hospitals
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: digital-hospitals
+  labels:
+    app: grafana
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - envFrom:
+            - secretRef:
+                name: grafana-creds
+          image: grafana/grafana:10.3.3
+          name: grafana
+          volumeMounts:
+            - name: data-dir
+              mountPath: /var/lib/grafana/
+      securityContext:
+        fsGroup: 472
+      volumes:
+        - name: data-dir
+          persistentVolumeClaim:
+            claimName: graf-data-dir-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: digital-hospitals
+spec:
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: grafana
+  type: ClusterIP

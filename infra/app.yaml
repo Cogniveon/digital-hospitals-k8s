@@ -1,0 +1,123 @@
+# !!! Requires sample-detection-api-creds
+# kubectl create -n digital-hospitals secret generic sample-detection-creds \
+#   --from-literal=INFLUXDB_ORG="Digital Hospitals" \
+#   --from-literal=INFLUXDB_TOKEN="xxxx" \
+#   --from-literal=INFLUXDB_URL="http://influxdb.digital-hospitals:8086"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digital-hospitals
+---
+# sample-detection-web service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: digital-hospitals
+  labels:
+    app: sample-detection-web
+  name: sample-detection-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-detection-web
+  template:
+    metadata:
+      labels:
+        app: sample-detection-web
+    spec:
+      containers:
+        - image: digital-hospitals/sample_detection_web
+          imagePullPolicy: Never
+          name: sample-detection-web
+          # env:
+          #   - name: BACKEND_URL
+          #     value: "http://sample-detection.digital-hospitals"
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-detection-web
+  namespace: digital-hospitals
+spec:
+  ports:
+    - name: sample-detection-web
+      port: 80
+      targetPort: 80
+  selector:
+    app: sample-detection-web
+  type: ClusterIP
+---
+# sample-detection-api service
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sample-detection-pvc
+  namespace: digital-hospitals
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: digital-hospitals
+  labels:
+    app: sample-detection-api
+  name: sample-detection-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-detection-api
+  template:
+    metadata:
+      labels:
+        app: sample-detection-api
+    spec:
+      containers:
+        - name: sample-detection-api
+          envFrom:
+            - secretRef:
+                name: sample-detection-api-creds
+          image: digital-hospitals/sample_detection_api
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: data-dir
+              mountPath: /code/images/
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
+      volumes:
+        - name: data-dir
+          persistentVolumeClaim:
+            claimName: sample-detection-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-detection-api
+  namespace: digital-hospitals
+spec:
+  ports:
+    - name: sample-detection-api
+      port: 80
+      targetPort: 80
+  selector:
+    app: sample-detection-api
+  type: ClusterIP

@@ -1,0 +1,127 @@
+# !!! Requires influxdb-monitoring-creds
+# kubectl create -n digital-hospitals secret generic influxdb-monitoring-creds \
+#   --from-literal=INFLUXDB_TOKEN="xxxxxxxx" \
+#   --from-literal=INFLUXDB_ORG="Digital Hospitals" \
+#   --from-literal=INFLUXDB_HOST=influxdb.digital-hospitals \
+#   --from-literal=INFLUXDB_MONITORING_BUCKET="k8s_monitoring" \
+#   --from-literal=INFLUXDB_HTTP_AUTH_ENABLED=true
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digital-hospitals
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf
+  namespace: digital-hospitals
+  labels:
+    k8s-app: telegraf
+data:
+  telegraf.conf: |+
+    [global_tags]
+      env = "dev"
+    [agent]
+      hostname = "$HOSTNAME"
+    [[outputs.influxdb_v2]]
+      urls = ["http://$INFLUXDB_HOST:8086/"] # required
+      token = "$TELEGRAF_INFLUXDB_TOKEN"
+      organization = "$TELEGRAF_INFLUXDB_ORG"
+      bucket = "$TELEGRAF_INFLUXDB_MONITORING_BUCKET"
+      timeout = "5s"
+    [[inputs.cpu]]
+      percpu = true
+      totalcpu = true
+      collect_cpu_time = false
+      report_active = false
+    [[inputs.disk]]
+      ignore_fs = ["tmpfs", "devtmpfs", "devfs"]
+    [[inputs.diskio]]
+    [[inputs.kernel]]
+    [[inputs.mem]]
+    [[inputs.processes]]
+    [[inputs.swap]]
+    [[inputs.system]]
+    # [[inputs.docker]]
+    #   endpoint = "unix:///var/run/docker.sock"
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: telegraf
+  namespace: digital-hospitals
+  labels:
+    k8s-app: telegraf
+spec:
+  selector:
+    matchLabels:
+      name: telegraf
+  template:
+    metadata:
+      labels:
+        name: telegraf
+    spec:
+      containers:
+        - name: telegraf
+          image: docker.io/telegraf:1.29.5-alpine
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: "HOST_PROC"
+              value: "/rootfs/proc"
+            - name: "HOST_SYS"
+              value: "/rootfs/sys"
+            - name: TELEGRAF_INFLUXDB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-monitoring-creds
+                  key: INFLUXDB_TOKEN
+            - name: TELEGRAF_INFLUXDB_ORG
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-monitoring-creds
+                  key: INFLUXDB_ORG
+            - name: INFLUXDB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-monitoring-creds
+                  key: INFLUXDB_HOST
+            - name: TELEGRAF_INFLUXDB_MONITORING_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-monitoring-creds
+                  key: INFLUXDB_MONITORING_BUCKET
+          volumeMounts:
+            - name: sys
+              mountPath: /rootfs/sys
+              readOnly: true
+            - name: proc
+              mountPath: /rootfs/proc
+              readOnly: true
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: utmp
+              mountPath: /var/run/utmp
+              readOnly: true
+            - name: config
+              mountPath: /etc/telegraf
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: utmp
+          hostPath:
+            path: /var/run/utmp
+        - name: config
+          configMap:
+            name: telegraf
