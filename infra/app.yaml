@@ -28,7 +28,7 @@ spec:
         app: sample-detection-web
     spec:
       containers:
-        - image: digital-hospitals/sample_detection_web
+        - image: digital-hospitals/sample_detection_web:latest
           imagePullPolicy: Never
           name: sample-detection-web
           # env:
@@ -91,7 +91,7 @@ spec:
           envFrom:
             - secretRef:
                 name: sample-detection-api-creds
-          image: digital-hospitals/sample_detection_api
+          image: digital-hospitals/sample_detection_api:latest
           imagePullPolicy: Never
           volumeMounts:
             - name: data-dir

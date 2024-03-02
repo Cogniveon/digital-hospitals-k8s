@@ -6,8 +6,8 @@ import {
   useParams,
 } from "react-router-dom";
 import Header from "./components/header";
-import React, { useContext, useRef } from "react";
-
+import React, { useContext, useEffect, useRef } from "react";
+import { formatDistance } from "date-fns";
 import Webcam from "react-webcam";
 
 import { SessionContext, SessionProvider } from "./sessionContext";
@@ -115,8 +115,15 @@ function InferenceList({ results }) {
     <ul className="list-disc mt-4 mx-auto inline-flex flex-col">
       {results.map((result) => {
         return (
-          <li key={result}>
-            <Link to={`/results/${result}`}>{result}</Link>
+          <li key={result.id}>
+            <Link to={`/results/${result.id}`}>
+              <span>{result.id}</span>
+              <span className="ml-2 text-slate-600">
+                {formatDistance(new Date(result.timestamp), new Date(), {
+                  addSuffix: true,
+                })}
+              </span>
+            </Link>
           </li>
         );
       })}
@@ -126,6 +133,33 @@ function InferenceList({ results }) {
 
 function Home() {
   const { user, room, results, setResults } = useContext(SessionContext);
+
+  useEffect(() => {
+    if (typeof user !== "undefined" && typeof room !== "undefined") {
+      let inferenceListUrl = new URL(
+        window.location.protocol +
+          "//" +
+          window.location.host +
+          "/api/v1/inference_request"
+      );
+      inferenceListUrl.search = new URLSearchParams({ user, room }).toString();
+      fetch(inferenceListUrl, {
+        method: "GET",
+      })
+        .then((response) => response.json())
+        .then((response) => {
+          setResults(
+            response.map((req) => ({
+              id: req["_value"],
+              timestamp: req["_time"],
+            }))
+          );
+        })
+        .catch((error) => console.log(error));
+    } else {
+      setResults([]);
+    }
+  }, [room, user, setResults]);
 
   return (
     <>
