@@ -6,8 +6,8 @@ COPY requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
-COPY ./sample_detection /code/sample_detection
+COPY ./sample_detection_api /code/sample_detection_api
 
 # ENTRYPOINT ["python3"]
-# CMD ["-m", "uvicorn", "sample_detection.main:app"]
-CMD ["uvicorn", "sample_detection.main:app", "--host", "0.0.0.0", "--port", "80"]
+# CMD ["-m", "uvicorn", "sample_detection_api.main:app"]
+CMD ["uvicorn", "sample_detection_api.main:app", "--host", "0.0.0.0", "--port", "80"]

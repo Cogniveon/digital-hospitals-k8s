@@ -24,5 +24,5 @@ build_ui:
 
 build:
 	eval $$(minikube docker-env)
-	$(MAKE) build_api
-	$(MAKE) build_ui
+	.build_api
+	.build_ui
