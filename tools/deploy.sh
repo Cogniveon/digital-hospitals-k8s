@@ -4,7 +4,7 @@
 
 GUM=tools/gum
 
-$GUM confirm "Are you sure you have setup a kubernetes cluster and configured kubectl?" && kubectl apply -f infra/influxdb.yaml
+$GUM confirm "Are you sure you have setup a kubernetes cluster and configured kubectl?" && kubectl apply -f k8s/influxdb.yaml
 
 INFLUX_URL=$(minikube service influxdb -n digital-hospitals --url)
 
@@ -24,7 +24,7 @@ kubectl create -n digital-hospitals secret generic influxdb-monitoring-creds \
   --from-literal=INFLUXDB_MONITORING_BUCKET="${INFLUXDB_MONITORING_BUCKET}" \
   --from-literal=INFLUXDB_HTTP_AUTH_ENABLED=true
 
-kubectl apply -f infra/telegraf_monitoring.yaml
+kubectl apply -f k8s/telegraf_monitoring.yaml
 
 GF_SECURITY_ADMIN_USER=$($GUM input --value="admin" --header "GF_SECURITY_ADMIN_USER")
 GF_SECURITY_ADMIN_PASSWORD=$($GUM input --value="password" --password --header "GF_SECURITY_ADMIN_PASSWORD (default: password)")
@@ -34,7 +34,7 @@ kubectl create -n digital-hospitals secret generic grafana-creds \
   --from-literal=GF_SECURITY_ADMIN_USER="${GF_SECURITY_ADMIN_USER}" \
   --from-literal=GF_SECURITY_ADMIN_PASSWORD="${GF_SECURITY_ADMIN_PASSWORD}"
 
-kubectl apply -f infra/grafana.yaml
+kubectl apply -f k8s/grafana.yaml
 
 GRAFANA_URL=$(minikube service grafana -n digital-hospitals --url)
 echo "Grafana is running at $GRAFANA_URL \n"
@@ -44,7 +44,7 @@ kubectl create -n digital-hospitals secret generic sample-detection-api-creds \
   --from-literal=INFLUXDB_TOKEN="${INFLUXDB_TOKEN}" \
   --from-literal=INFLUXDB_URL="http://${INFLUXDB_HOST}:8086"
 
-kubectl apply -f infra/app.yaml
+kubectl apply -f k8s/app.yaml
 
 API_URL=$(minikube service sample-detection-api -n digital-hospitals --url)
 echo "API is running at $INFLUX_URL \n"
