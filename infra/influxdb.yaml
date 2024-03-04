@@ -54,4 +54,4 @@ spec:
       targetPort: 8086
   selector:
     app: influxdb
-  type: ClusterIP
+  type: NodePort

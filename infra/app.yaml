@@ -54,7 +54,7 @@ spec:
       targetPort: 80
   selector:
     app: sample-detection-web
-  type: ClusterIP
+  type: NodePort
 ---
 # sample-detection-api service
 apiVersion: v1
@@ -120,4 +120,4 @@ spec:
       targetPort: 80
   selector:
     app: sample-detection-api
-  type: ClusterIP
+  type: NodePort

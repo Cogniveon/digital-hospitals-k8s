@@ -3,7 +3,7 @@
 #   --from-literal=INFLUXDB_TOKEN="xxxxxxxx" \
 #   --from-literal=INFLUXDB_ORG="Digital Hospitals" \
 #   --from-literal=INFLUXDB_HOST=influxdb.digital-hospitals \
-#   --from-literal=INFLUXDB_MONITORING_BUCKET="k8s_monitoring" \
+#   --from-literal=INFLUXDB_MONITORING_BUCKET="default" \
 #   --from-literal=INFLUXDB_HTTP_AUTH_ENABLED=true
 ---
 apiVersion: v1
