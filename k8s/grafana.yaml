@@ -47,6 +47,13 @@ spec:
           volumeMounts:
             - name: data-dir
               mountPath: /var/lib/grafana/
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
       securityContext:
         fsGroup: 472
       volumes:
@@ -60,10 +67,10 @@ metadata:
   name: grafana
   namespace: digital-hospitals
 spec:
+  type: NodePort
   ports:
     - name: grafana
       port: 3000
       targetPort: 3000
   selector:
     app: grafana
-  type: NodePort

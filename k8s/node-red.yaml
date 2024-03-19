@@ -1,0 +1,75 @@
+# !!! Requires node-red-creds
+# kubectl create -n digital-hospitals secret generic node-red-creds \
+#   --from-literal=NODE_RED_ADMIN_PASSWORD="" \
+#   --from-literal=NODE_RED_CREDENTIAL_SECRET=""
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digital-hospitals
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: node-red-data-dir-pvc
+  namespace: digital-hospitals
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: digital-hospitals
+  labels:
+    app: node-red
+  name: node-red
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-red
+  template:
+    metadata:
+      labels:
+        app: node-red
+    spec:
+      containers:
+      # - envFrom:
+      #     - secretRef:
+      #         name: node-red-creds
+      - image: nodered/node-red:latest
+        name: node-red
+        ports:
+        - containerPort: 1880
+        volumeMounts:
+        - name: data-dir
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: data-dir
+        persistentVolumeClaim:
+          claimName: node-red-data-dir-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-red
+  namespace: digital-hospitals
+spec:
+  ports:
+  - name: node-red
+    port: 80
+    targetPort: 1880
+  selector:
+    app: node-red
+  type: NodePort
