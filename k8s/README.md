@@ -1,5 +1,7 @@
 ## Setup
 
+[Install Kubernetes](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+
 ![Infra Diagram](./infra.png)
 
 ```bash
